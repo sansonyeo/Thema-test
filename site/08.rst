@@ -1,0 +1,104 @@
+##############################
+서버 연동하기 (심화)
+##############################
+
+DataSource를 사용하여 데이터를 추가(Create), 수정(Update), 삭제(Delete) 동작을 처리할 수 있습니다.
+이 세 가지 동작은 데이터를 읽어올 때와 동일하게 DataSource의 ``api`` 옵션에 설정하여 사용할 수 있습니다.
+
+이번 장에서는 **데이터를 수정하는 동작(Update)** 을 구현해봅니다.
+
+
+Udate API 추가하기
+==============================
+
+먼저, 데이터를 수정한 후 호출하는 서버 API 정보를 추가합니다.
+읽기(``readData``) 동작을 처리했던 것과 같이 데이터값이 수정되었을 때 호출되는 API URL을 설정합니다.
+
+.. code-block:: javascript
+
+    const dataSource = {
+      api: {
+        readData: {
+          url: 'http://localhost:3000/api/readData',
+          method: 'GET'
+        },
+        updateData: {
+          url: 'http://localhost:3000/api/updateData',
+          method: 'PUT'
+        }
+      }
+    };
+
+UI 버튼 추가하기
+==============================
+
+버튼을 클릭하면 수정된 행 데이터를 가져와서 서버 API로 호출할 수 있도록 ``src/index.html`` 파일에 태그를 추가해봅니다.
+
+.. code-block:: html
+
+    <button id="sync">동기화</button>
+
+
+``src/index.js`` 파일로 돌아와 버튼에 클릭 이벤트를 바인딩하고 이벤트 발생 시 호출되는 핸들러 함수를 추가합니다.
+
+.. code-block:: javascript
+
+    function syncServer() {}
+
+    document.getElementById('sync').addEventListener('click', syncServer);
+
+
+서버 요청하기
+==============================
+
+앞서 작성한 ``syncServer`` 이벤트 핸들러 함수를 완성해봅니다.
+편집 중인 셀이 있는 경우 종료를 위해 ``grid.finishEditing`` API를 호출합니다.
+이후에 다음과 같이 ``grid.request`` API를 호출하면 위에서 설정한 ``updateData`` 에 설정된 API URL을 호출하게 됩니다.
+
+.. code-block:: javascript
+
+    function syncServer() {
+      const { rowKey, columnName } = grid.getFocusedCell();
+
+      if (rowKey && columnName) {
+        grid.finishEditing(rowKey, columnName);
+      }
+
+      grid.request('updateData', {
+        checkedOnly: false
+      });
+    }
+
+
+응답 결과 처리하기
+==============================
+
+그리드에서는 |customEvent| 를 사용하여 어떤 동작의 결과를 처리할 수 있습니다.
+가계부 예제에서는 ``response`` 이벤트를 사용하여 서버에서 온 응답 결과를 출력할 수 있도록 처리해봅니다.
+
+.. |customEvent| raw:: html 
+
+  <a href="https://github.com/nhn/tui.grid/blob/master/packages/toast-ui.grid/docs/ko/custom-event.md" target="_blank">커스텀 이벤트</a>
+
+.. code-block:: javascript
+
+    grid.on('response', ev => {
+      const {response} = ev.xhr;
+      const responseObj = JSON.parse(response);
+
+      console.log('result : ', responseObj.result);
+      console.log('data : ', responseObj.data);
+    });
+
+
+그리드에서 데이터를 변경한 다음 '동기화' 버튼을 클릭해 서버 데이터를 업데이트합니다.
+
+.. image:: _static/step08-1.png
+
+브라우저를 리프레시하면 변경된 데이터가 출력되는 것을 확인할 수 있습니다.
+
+
+결과 화면
+==============================
+
+.. image:: _static/step08-2.png
